@@ -1,25 +1,27 @@
 
-function PCG(x, b, M::Function; maxiter, abstol)
-    # Preconditioned Conjugate Gradient (PCG) for symmetric ASM -> not RAS
+function PCG(A, b, x, Pr::Function; maxiter, abstol, verbose=false)
+    # Preconditioned Conjugate Gradient (PCG) for symmetric AS -> not RAS
     tic = time()
     un = x * 0.0
-    r = b - A(un)
-    z = M(r)
+    r = b - A * un
+    z = Pr(r)
     p = z
     res, res[1], ρ = zeros(1), norm(z), 1.0
     for i = 1:maxiter # algorithm 3.2 pg 88 DDM Book
         ρ = dot(r, z)
-        q = A(p)
+        q = A * p
         α = ρ / dot(p, q)
         un += α * p
         r -= α * q
-        z = M(r)
+        z = Pr(r)
         p = z + (dot(r, z) / ρ) * p
         append!(res, norm(z))
         res[i+1] < abstol && @goto exit
     end
     @label exit
-    println("PCG i=$(length(res)), absres= $(res[end]) in ", time() - tic, " seconds")
+    if verbose
+        println("PCG i=$(length(res)), absres= $(res[end]) in ", time() - tic, " seconds")
+    endif
     return un, res
 end # PCG
 
@@ -31,7 +33,7 @@ function gmres_update(x, s, q, i, H)
     return x
 end
 
-function GMRES(x, b, M::Function; maxiter, abstol, m)
+function GMRES(A, b, x, Pr::Function; maxiter, abstol, m, verbose=false)
     tic = time()
     res, res[1] = zeros(1), norm(b)
     for j = 1:maxiter
@@ -41,13 +43,13 @@ function GMRES(x, b, M::Function; maxiter, abstol, m)
         H = zeros(m + 1, m)
         s = zeros(m + 1)
 
-        rs = b - A(x)
-        r = M(rs)
+        rs = b - A * x
+        r = Pr(rs)
         s[1] = norm(r)
         q[1] = r / s[1]
 
         for i = 1:m
-            z = M(A(q[i]))
+            z = Pr(A * q[i])
 
             # Arnoldi iteration
             for k = 1:i
@@ -76,18 +78,20 @@ function GMRES(x, b, M::Function; maxiter, abstol, m)
         x = gmres_update(x, s, q, m, H) # Update x before the restart
     end
     @label exit
-    println("GMRES i=$(length(res)), absres= $(res[end]) in ", time() - tic, " seconds")
+    if verbose
+        println("GMRES i=$(length(res)), absres= $(res[end]) in ", time() - tic, " seconds")
+    end
     return x, res
 end
 
-function BiCGSTAB(x, b, M::Function; maxiter, abstol)
-    # Preconditioned BiCGstab, two MV operation when compared to PCG
+function BiCGSTAB(A, b, x, Pr::Function; maxiter, abstol, verbose=false)
+    # Preconditioned BiCGstab, two MV operations when compared to PCG
     # We can expect a factor two in iteration count when compared to PCG.
-    # Wriggles/peaks make sense since no residual is being minimized.
+    # Wriggles/peaks in the residual evolution can appear there is no minimization.
     tic = time()
     un = x
-    r = b - A(un)
-    z = M(r)
+    r = b - A * un
+    z = Pr(r)
     rb, p, v = r, r * 0.0, r * 0.0
     ρ, α, ω = 1.0, 1.0, 1.0
     res, res[1] = zeros(1), norm(z)
@@ -97,21 +101,23 @@ function BiCGSTAB(x, b, M::Function; maxiter, abstol)
         δ = dot(rb, r)
         β = (δ * α) / (ρ * ω)
         p = (p - ω * v) * β + r
-        yn = M(p)
-        v = A(yn)
+        yn = Pr(p)
+        v = A * yn
         α = δ / dot(rb, v)
         rs = α * v - r
-        zn = M(rs)
-        t = A(zn)
-        tn = M(t)
+        zn = Pr(rs)
+        t = A * zn
+        tn = Pr(t)
         ω = dot(tn, zn) / dot(tn, tn)
         un += (α * yn + ω * zn) # xi = xim1 + α*y + ω*z
         r = rs - ω * t
-        z = M(r)
+        z = Pr(r)
         ρ = δ
     end
     @label exit
-    println("BiCGstab i=$(length(res)), absres= $(res[end]) in ", time() - tic, " seconds")
+    if verbose
+        println("BiCGstab i=$(length(res)), absres= $(res[end]) in ", time() - tic, " seconds")
+    end
     return un, res
 end # BiCGSTAB
 
