@@ -1,5 +1,5 @@
 
-function PCG(A, b, un, Pr::Function; maxiter, abstol, verbose=false)
+function PCG(A, b, un, Pr::Function; maxiter, abstol, verbose)
     # Preconditioned Conjugate Gradient (PCG) for symmetric AS -> not RAS
     tic = time()
     r = b - A * un
@@ -32,7 +32,7 @@ function gmres_update(x, s, q, i, H)
     return x
 end
 
-function GMRES(A, b, un, Pr::Function; maxiter, abstol, m, verbose=false)
+function GMRES(A, b, un, Pr::Function; maxiter, abstol, m, verbose)
     tic = time()
     x = un
     res, res[1] = zeros(1), norm(b)
@@ -84,7 +84,7 @@ function GMRES(A, b, un, Pr::Function; maxiter, abstol, m, verbose=false)
     return x, res
 end
 
-function BiCGSTAB(A, b, un, Pr::Function; maxiter, abstol, verbose=false)
+function BiCGSTAB(A, b, un, Pr::Function; maxiter, abstol, verbose)
     # Preconditioned BiCGstab, two MV operations when compared to PCG
     # We can expect a factor two in iteration count when compared to PCG.
     # Wriggles/peaks in the residual evolution can appear there is no minimization.
