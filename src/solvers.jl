@@ -20,7 +20,7 @@ function PCG(A, b, un, Pr::Function; maxiter, abstol, verbose)
     @label exit
     if verbose
         println("PCG i=$(length(res)), absres= $(res[end]) in ", time() - tic, " seconds")
-    endif
+    end
     return un, res
 end # PCG
 
