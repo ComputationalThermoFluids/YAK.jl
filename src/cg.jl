@@ -16,7 +16,7 @@ function cg!(x, A, b;
     iter = 0
     res = [norm(z)]
 
-    while iter ≤ maxiter && last(res) ≥ abstol
+    while iter < maxiter && last(res) ≥ abstol
         rho = dot(r, z)
         mul!(q, A, p)
         alpha = rho / dot(p, q)
