@@ -1,28 +1,68 @@
+export cg!, gmres!, bicgstab!
+export cg, gmres, bicgstab
 
-function PCG(A, b, un, Pr::Function; maxiter, abstol, verbose)
-    # Preconditioned Conjugate Gradient (PCG) for symmetric AS -> not RAS
-    tic = time()
-    r = b - A * un
-    z = Pr(r)
+"""
+    cg!(x, A, b; kwargs...) -> x, [history]
+Solves the problem ``Ax = b`` with conjugate gradient.
+# Arguments
+- `x`: Initial guess, will be updated in-place;
+- `A`: linear operator;
+- `b`: right-hand side.
+## Keywords
+- `initially_zero::Bool`: If `true` assumes that `iszero(x)` so that one
+  matrix-vector product can be saved when computing the initial
+  residual vector;
+- `abstol::Real = zero(real(eltype(b)))`,
+  `reltol::Real = sqrt(eps(real(eltype(b))))`: absolute and relative
+  tolerance for the stopping condition
+  `|r_k| ≤ max(reltol * |r_0|, abstol)`, where `r_k = A * x_k - b`
+- `restart::Int = min(20, size(A, 2))`: restarts GMRES after specified number of iterations;
+- `maxiter::Int = size(A, 2)`: maximum number of inner iterations of GMRES;
+- `Pl`: left preconditioner;
+- `Pr`: right preconditioner;
+- `log::Bool`: keep track of the residual norm in each iteration;
+- `verbose::Bool`: print convergence information during the iterations.
+# Return values
+**if `log` is `false`**
+- `x`: approximate solution.
+**if `log` is `true`**
+- `x`: approximate solution;
+- `history`: convergence history.
+"""
+function cg!(
+    x,
+    A,
+    b;
+    Pl = Identity(),
+    Pr = Identity(),
+    abstol::Real = zero(real(eltype(b))),
+    reltol::Real = sqrt(eps(real(eltype(b)))),
+    restart::Int = min(20, size(A, 2)),
+    maxiter::Int = size(A, 2),
+    log::Bool = false,
+    initially_zero::Bool = false,
+    verbose::Bool = false,
+)
+
+    r = b - A * x
+    ldiv!(z,Pr,r)
     p = z
-    res, res[1], ρ = zeros(1), norm(z), 1.0
+    history, history[1], ρ = zeros(1), norm(z), 1.0
     for i = 1:maxiter # algorithm 3.2 pg 88 DDM Book
         ρ = dot(r, z)
         q = A * p
         α = ρ / dot(p, q)
-        un += α * p
+        x += α * p
         r -= α * q
-        z = Pr(r)
+        ldiv!(z,Pr,r)
         p = z + (dot(r, z) / ρ) * p
-        append!(res, norm(z))
-        res[i+1] < abstol && @goto exit
+        append!(history, norm(z))
+        history[i+1] < abstol && @goto exit
     end
     @label exit
-    if verbose
-        println("PCG i=$(length(res)), absres= $(res[end]) in ", time() - tic, " seconds")
-    end
-    return un, res
-end # PCG
+    verbose && println("i=$(length(res)), absres= $(res[end])")
+    log ? (x, history) : x
+end # cg
 
 function gmres_update(x, s, q, i, H)
     y = H[1:i, 1:i] \ s[1:i]
@@ -32,9 +72,33 @@ function gmres_update(x, s, q, i, H)
     return x
 end
 
-function GMRES(A, b, un, Pr::Function; maxiter, abstol, m, verbose)
-    tic = time()
-    x = un
+# function update_solution!(x, y, arnoldi::ArnoldiDecomp{T}, Pr::Identity, k::Int, Ax) where {T}
+#     # Update x ← x + V * y
+#     mul!(x, view(arnoldi.V, :, 1 : k - 1), y, one(T), one(T))
+# end
+
+# function update_solution!(x, y, arnoldi::ArnoldiDecomp{T}, Pr, k::Int, Ax) where {T}
+#     # Computing x ← x + Pr \ (V * y) and use Ax as a work space
+#     mul!(Ax, view(arnoldi.V, :, 1 : k - 1), y)
+#     ldiv!(Pr, Ax)
+#     x .+= Ax
+# end
+
+function gmres!(
+    x,
+    A,
+    b;
+    Pl = Identity(),
+    Pr = Identity(),
+    abstol::Real = zero(real(eltype(b))),
+    reltol::Real = sqrt(eps(real(eltype(b)))),
+    restart::Int = min(20, size(A, 2)),
+    maxiter::Int = size(A, 2),
+    log::Bool = false,
+    initially_zero::Bool = false,
+    verbose::Bool = false,
+)
+
     res, res[1] = zeros(1), norm(b)
     for j = 1:maxiter
 
@@ -44,7 +108,7 @@ function GMRES(A, b, un, Pr::Function; maxiter, abstol, m, verbose)
         s = zeros(m + 1)
 
         rs = b - A * x
-        r = Pr(rs)
+        ldiv!(z,Pr,rs)
         s[1] = norm(r)
         q[1] = r / s[1]
 
@@ -68,6 +132,12 @@ function GMRES(A, b, un, Pr::Function; maxiter, abstol, m, verbose)
             H[1:i+1, i] = J[i] * H[1:i+1, i]
             s = J[i] * s
 
+            ##### Solve the projected problem Hy = β * e1 in the least-squares sense
+            ##rhs = solve_least_squares!(g.arnoldi, g.β, g.k)
+
+            ## And improve the solution x ← x + Pr \ (V * y)
+            ##update_solution!(g.x, view(rhs, 1 : g.k - 1), g.arnoldi, g.Pr, g.k, g.Ax)
+
             append!(res, abs(s[i+1])) # Norm of residual
             # Check residual, compute x, and stop if possible
             if res[end] < abstol
@@ -78,19 +148,28 @@ function GMRES(A, b, un, Pr::Function; maxiter, abstol, m, verbose)
         x = gmres_update(x, s, q, m, H) # Update x before the restart
     end
     @label exit
-    if verbose
-        println("GMRES i=$(length(res)), absres= $(res[end]) in ", time() - tic, " seconds")
-    end
-    return x, res
-end
+    verbose && println("i=$(length(res)), absres= $(res[end])")
+    log ? (x, history) : x
+end # gmres
 
-function BiCGSTAB(A, b, un, Pr::Function; maxiter, abstol, verbose)
-    # Preconditioned BiCGstab, two MV operations when compared to PCG
-    # We can expect a factor two in iteration count when compared to PCG.
-    # Wriggles/peaks in the residual evolution can appear there is no minimization.
-    tic = time()
-    r = b - A * un
-    z = Pr(r)
+
+function bicgstab!(
+    x,
+    A,
+    b;
+    Pl = Identity(),
+    Pr = Identity(),
+    abstol::Real = zero(real(eltype(b))),
+    reltol::Real = sqrt(eps(real(eltype(b)))),
+    restart::Int = min(20, size(A, 2)),
+    maxiter::Int = size(A, 2),
+    log::Bool = false,
+    initially_zero::Bool = false,
+    verbose::Bool = false,
+)
+
+    r = b - A * x
+    z = Pr * r
     rb, p, v = r, r * 0.0, r * 0.0
     ρ, α, ω = 1.0, 1.0, 1.0
     res, res[1] = zeros(1), norm(z)
@@ -100,23 +179,28 @@ function BiCGSTAB(A, b, un, Pr::Function; maxiter, abstol, verbose)
         δ = dot(rb, r)
         β = (δ * α) / (ρ * ω)
         p = (p - ω * v) * β + r
-        yn = Pr(p)
+        ldiv!(yn,Pr,p)
         v = A * yn
         α = δ / dot(rb, v)
         rs = α * v - r
-        zn = Pr(rs)
+        ldiv!(zn,Pr,rs)
         t = A * zn
-        tn = Pr(t)
+        ldiv!(tn,Pr,t)
         ω = dot(tn, zn) / dot(tn, tn)
-        un += (α * yn + ω * zn) # xi = xim1 + α*y + ω*z
+        x += (α * yn + ω * zn) # xi = xim1 + α*y + ω*z
         r = rs - ω * t
-        z = Pr(r)
+        ldiv!(z,Pr,r)
         ρ = δ
     end
     @label exit
-    if verbose
-        println("BiCGstab i=$(length(res)), absres= $(res[end]) in ", time() - tic, " seconds")
-    end
-    return un, res
-end # BiCGSTAB
+    verbose && println("i=$(length(res)), absres= $(res[end])")
+    log ? (x, history) : x
+end # bicgstab
 
+"""
+    gmres(A, b; kwargs...) -> x, [history]
+Same as [`gmres!`](@ref), but allocates a solution vector `x` initialized with zeros.
+"""
+cg(A, b; kwargs...) = cg!(zerox(A, b), A, b; initially_zero = true, kwargs...)
+gmres(A, b; kwargs...) = gmres!(zerox(A, b), A, b; initially_zero = true, kwargs...)
+bicgstab(A, b; kwargs...) = bicgstab!(zerox(A, b), A, b; initially_zero = true, kwargs...)
