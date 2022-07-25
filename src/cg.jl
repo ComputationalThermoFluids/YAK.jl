@@ -1,8 +1,8 @@
 # Preconditioned Conjugate Gradient (PCG) for symmetric AS -> not RAS
-function cg!(x, A, b;
-            Pr=I,
-            maxiter=length(b) ÷ 4,
-            abstol=√eps(mapreduce(eltype, promote_type, (x, A, b))))
+function cg2!(x, A, b;
+             Pr=I,
+             maxiter=length(b) ÷ 4,
+             abstol=√eps(mapreduce(eltype, promote_type, (x, A, b))))
 
     r = deepcopy(b)
     mul!(r, A, x, -1, true)

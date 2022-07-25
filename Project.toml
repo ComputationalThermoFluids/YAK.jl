@@ -5,6 +5,10 @@ version = "0.1.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+CartesianArrays = "76a5a9e6-eaa9-45ad-9e60-9c4e19c8bef4"
+CartesianCore = "b1b87794-22cb-46b0-a31c-6d11dc703d98"
+CartesianDDM = "e340eb63-7005-45f1-b263-fba3e88328fa"
+IterativeSolvers = "42fd0dbc-a981-5370-80f2-aaf504508153"
 
 [compat]
 julia = "1"
