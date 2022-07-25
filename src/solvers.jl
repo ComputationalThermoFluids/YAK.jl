@@ -1,5 +1,4 @@
 export cg!, gmres!, bicgstab!
-export cg, gmres, bicgstab
 
 """
     cg!(x, A, b; kwargs...) -> x, [history]
@@ -33,18 +32,16 @@ function cg!(
     x,
     A,
     b;
-    Pl = Identity(),
     Pr = Identity(),
     abstol::Real = zero(real(eltype(b))),
-    reltol::Real = sqrt(eps(real(eltype(b)))),
-    restart::Int = min(20, size(A, 2)),
+    #reltol::Real = sqrt(eps(real(eltype(b)))),
     maxiter::Int = size(A, 2),
     log::Bool = false,
     initially_zero::Bool = false,
-    verbose::Bool = false,
-)
+    verbose::Bool = false)
 
     r = b - A * x
+    z = similar(r)
     ldiv!(z,Pr,r)
     p = z
     history, history[1], ρ = zeros(1), norm(z), 1.0
@@ -88,18 +85,18 @@ function gmres!(
     x,
     A,
     b;
-    Pl = Identity(),
+    #Pl = Identity(),
     Pr = Identity(),
     abstol::Real = zero(real(eltype(b))),
-    reltol::Real = sqrt(eps(real(eltype(b)))),
+    #reltol::Real = sqrt(eps(real(eltype(b)))),
     restart::Int = min(20, size(A, 2)),
     maxiter::Int = size(A, 2),
     log::Bool = false,
     initially_zero::Bool = false,
-    verbose::Bool = false,
-)
+    verbose::Bool = false)
 
-    res, res[1] = zeros(1), norm(b)
+    m = restart
+    history, history[1] = zeros(1), norm(b)
     for j = 1:maxiter
 
         q = Vector{Any}(undef, m + 1)
@@ -138,9 +135,9 @@ function gmres!(
             ## And improve the solution x ← x + Pr \ (V * y)
             ##update_solution!(g.x, view(rhs, 1 : g.k - 1), g.arnoldi, g.Pr, g.k, g.Ax)
 
-            append!(res, abs(s[i+1])) # Norm of residual
+            append!(history, abs(s[i+1])) # Norm of residual
             # Check residual, compute x, and stop if possible
-            if res[end] < abstol
+            if history[end] < abstol
                 x = gmres_update(x, s, q, i, H)
                 @goto exit
             end
@@ -148,7 +145,7 @@ function gmres!(
         x = gmres_update(x, s, q, m, H) # Update x before the restart
     end
     @label exit
-    verbose && println("i=$(length(res)), absres= $(res[end])")
+    verbose && println("i=$(length(history)), absres= $(history[end])")
     log ? (x, history) : x
 end # gmres
 
@@ -157,25 +154,23 @@ function bicgstab!(
     x,
     A,
     b;
-    Pl = Identity(),
+    #Pl = Identity(),
     Pr = Identity(),
     abstol::Real = zero(real(eltype(b))),
-    reltol::Real = sqrt(eps(real(eltype(b)))),
-    restart::Int = min(20, size(A, 2)),
+    #reltol::Real = sqrt(eps(real(eltype(b)))),
     maxiter::Int = size(A, 2),
     log::Bool = false,
     initially_zero::Bool = false,
-    verbose::Bool = false,
-)
+    verbose::Bool = false)
 
     r = b - A * x
     z = Pr * r
     rb, p, v = r, r * 0.0, r * 0.0
     ρ, α, ω = 1.0, 1.0, 1.0
-    res, res[1] = zeros(1), norm(z)
+    history, history[1] = zeros(1), norm(z)
     for i = 1:maxiter
-        append!(res, norm(z))
-        res[i+1] < abstol && @goto exit
+        append!(history, norm(z))
+        history[i+1] < abstol && @goto exit
         δ = dot(rb, r)
         β = (δ * α) / (ρ * ω)
         p = (p - ω * v) * β + r
@@ -193,14 +188,26 @@ function bicgstab!(
         ρ = δ
     end
     @label exit
-    verbose && println("i=$(length(res)), absres= $(res[end])")
+    verbose && println("i=$(length(history)), absres= $(history[end])")
     log ? (x, history) : x
 end # bicgstab
+
+export cg, gmres, bicgstab
 
 """
     gmres(A, b; kwargs...) -> x, [history]
 Same as [`gmres!`](@ref), but allocates a solution vector `x` initialized with zeros.
 """
-cg(A, b; kwargs...) = cg!(zerox(A, b), A, b; initially_zero = true, kwargs...)
 gmres(A, b; kwargs...) = gmres!(zerox(A, b), A, b; initially_zero = true, kwargs...)
+
+"""
+    cg(A, b; kwargs...) -> x, [history]
+Same as [`cg!`](@ref), but allocates a solution vector `x` initialized with zeros.
+"""
+cg(A, b; kwargs...) = cg!(zerox(A, b), A, b; initially_zero = true, kwargs...)
+
+"""
+    bicgstab(A, b; kwargs...) -> x, [history]
+Same as [`bicgstab!`](@ref), but allocates a solution vector `x` initialized with zeros.
+"""
 bicgstab(A, b; kwargs...) = bicgstab!(zerox(A, b), A, b; initially_zero = true, kwargs...)
