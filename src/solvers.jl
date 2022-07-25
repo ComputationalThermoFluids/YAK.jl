@@ -1,4 +1,3 @@
-export cg!, gmres!, bicgstab!
 
 """
     cg!(x, A, b; kwargs...) -> x, [history]
@@ -191,8 +190,6 @@ function bicgstab!(
     verbose && println("i=$(length(history)), absres= $(history[end])")
     log ? (x, history) : x
 end # bicgstab
-
-export cg, gmres, bicgstab
 
 """
     gmres(A, b; kwargs...) -> x, [history]
