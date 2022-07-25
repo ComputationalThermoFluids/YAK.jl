@@ -1,6 +1,6 @@
 module YAK
 
-using LinearAlgebra
+#using LinearAlgebra
 using CartesianCore
 using CartesianArrays
 using CartesianDDM
