@@ -39,23 +39,23 @@ function cg!(
     initially_zero::Bool = false,
     verbose::Bool = false)
 
-    r = b - A * x
+    r = deepcopy(b)
+    mul!(r, A, x, -1, true) # r = b - A * x
     z = similar(r)
     ldiv!(z,Pr,r)
-    p = z
-    history, history[1], ρ = zeros(1), norm(z), 1.0
-    for i = 1:maxiter # algorithm 3.2 pg 88 DDM Book
+    p = deepcopy(z)
+    history, ρ = [norm(z)], 1.0
+    while iter < maxiter && last(history) ≥ abstol        
         ρ = dot(r, z)
-        q = A * p
+        mul!(q,A,p) # q = A * p
         α = ρ / dot(p, q)
-        x += α * p
-        r -= α * q
+        axpy!( α, p, x) # x += α * p
+        axpy!(-α, q, r) # r -= α * q
         ldiv!(z,Pr,r)
-        p = z + (dot(r, z) / ρ) * p
-        append!(history, norm(z))
-        history[i+1] < abstol && @goto exit
+        axpby!(true, z, (dot(r, z) / ρ), p) # p = z + (dot(r, z) / ρ) * p
+        push!(history, norm(z))
+        iter += 1
     end
-    @label exit
     verbose && println("i=$(length(res)), absres= $(res[end])")
     log ? (x, history) : x
 end # cg
