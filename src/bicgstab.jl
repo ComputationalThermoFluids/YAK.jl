@@ -25,7 +25,7 @@ function bicgstab!(
     y = similar(r) 
     t = similar(r) 
     tn = similar(r) 
-    
+
     ρ, α, ω = 1., 1., 1.
     history = [norm(z)]
     tol = max(reltol * history[1], abstol)
@@ -57,4 +57,5 @@ function bicgstab!(
     end
     verbose && println("iter $(length(history)) residual: $(history[end])")
     log ? (x, history) : x
+    #ifelse(log, (x, history), (x,))
 end # bicgstab
