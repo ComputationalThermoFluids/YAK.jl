@@ -1,6 +1,3 @@
-using YAK
-using Test
-
-@testset "YAK.jl" begin
-    # Write your tests here.
-end
+include("cg.jl")
+include("gmres.jl")
+include("bicgstab.jl")
