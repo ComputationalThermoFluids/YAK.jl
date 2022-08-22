@@ -6,13 +6,16 @@ using CartesianArrays
 using CartesianDDM
 using IterativeSolvers
 
-export cg2!
-include("cg2.jl")
-
-export cg!, cgs!, bicgstab!
+export cg!, cg
 include("cg.jl")
+
+export cgs!
 include("cgs.jl")
+
+export bicgstab!, bicgstab
 include("bicgstab.jl")
-#include("solvers.jl")
+
+export gmres!
+include("gmres.jl")
 
 end

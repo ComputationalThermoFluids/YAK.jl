@@ -25,7 +25,7 @@ function cgs!(
     v = similar(r)
 
     Az = similar(r)
-    ρ, α, ω = 1.0, 1.0, 1.0
+    ρ, α = 1.0, 1.0
     history = [norm(z)]
     tol = max(reltol * history[1], abstol)
     iter = 0
@@ -36,14 +36,16 @@ function cgs!(
         axpy!(β, q, u) # u = r + β * q
         p = deepcopy(u)
         axpy!(β, q, p) # p = p + β * q
-        axpy!(β*β, p, p) # p = p + β * β * p
+        axpy!(β * β, p, p) # p = p + β * β * p
         ldiv!(y, Pr, p) # y = M^{-1} * p
         mul!(v, A, y) # v = A * y
         α = δ / dot(rs, v)
         q = deepcopy(u) # q = u 
         axpy!(-α, v, q) # q = q - α * v
-        ldiv!(z, Pr, u+q) # z = M^{-1} * (u + q)
-        axpy!(+α, z, x) # x = x + α * y 
+        k = deepcopy(u)
+        axpy!(true, q, k)
+        ldiv!(z, Pr, k) # z = M^{-1} * (u + q)
+        axpy!(α, z, x) # x = x + α * y 
         mul!(Az, A, z) # Az = A * z
         axpy!(-α, Az, r) # x = x + ω * z
         push!(history, norm(r))
