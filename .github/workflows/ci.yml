@@ -1,4 +1,4 @@
-name: CI (Single threaded)
+name: Serial
 on:
   - push
   - pull_request
