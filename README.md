@@ -1,6 +1,6 @@
 # YAK.jl
 
-[![CI][github-img]][github-url] | [![license][license-img]][license-url] |
+[![CI][github-img]][github-url] [![license][license-img]][license-url]
 
 [github-img]: https://github.com/ComputationalThermoFluids/YAK.jl/actions/workflows/ci.yml/badge.svg
 [github-url]: https://github.com/ComputationalThermoFluids/YAK.jl/actions/workflows/ci.yml
