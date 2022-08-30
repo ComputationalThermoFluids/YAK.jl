@@ -24,20 +24,17 @@ using YAK,Test,LinearAlgebra
 
         xref = A\b; norm(A*xref - b)
         x,his = YAK.cg(A,b;x0=xref,log=true)
-        #@test 
-        norm(A*x - b) ≤ abstol
-        #@test 
-        length(his) ≤ 2
+        @test norm(A*x - b) ≤ abstol
+        @test length(his) ≤ 2
 
         # Test with cholesky factorizaation as preconditioner should converge immediately
-        F = cholesky(A, Val(false))
+        F = LinearAlgebra.cholesky(A, Val(false))
         x,his = YAK.cg(A,b; Pr=F , log=true)
-        norm(A*x - b) ≤ abstol
+        @test norm(A*x - b) ≤ abstol
 
         # All-zeros rhs should give all-zeros lhs
         x0 = YAK.cg(A, zeros(T, n))
-        #@test 
-        x0 == zeros(T, n)
+        @test x0 == zeros(T, n)
     #end
 #end
 
