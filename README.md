@@ -9,7 +9,7 @@
 [license-url]: LICENSE.md
 
 Yet Another Krylov (YAK.jl) is another Julia package that provides efficient iterative [Krylov subspace](https://en.wikipedia.org/wiki/Krylov_subspace) algorithms for solving dense or sparse large linear systems, developed entirely with  [BLAS and sparse BLAS](http://cali2.unilim.fr/intel-xe/mkl/mklman/GUID-707FB65C-D0D9-418A-B22E-CBDEFB163C02.htm)
-[level-1 routines](http://cali2.unilim.fr/intel-xe/mkl/mklman/GUID-A050F064-A146-49F7-B22E-BBB1E1DD6B3F.htm#GUID-A050F064-A146-49F7-B22E-BBB1E1DD6B3F) (vector-vector operations).
+[level-1](http://cali2.unilim.fr/intel-xe/mkl/mklman/GUID-A050F064-A146-49F7-B22E-BBB1E1DD6B3F.htm#GUID-A050F064-A146-49F7-B22E-BBB1E1DD6B3F) (vector-vector operations) and [level-2](http://cali2.unilim.fr/intel-xe/mkl/mklman/GUID-9B9E459C-4E87-4A5E-8BC3-2FE06C86D0F1.htm#GUID-9B9E459C-4E87-4A5E-8BC3-2FE06C86D0F1) (matrix-vector operations).
 
 Available algorithms:
 - conjugate gradient method ([CG](https://en.wikipedia.org/wiki/Conjugate_gradient_method)),
