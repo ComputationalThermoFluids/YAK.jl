@@ -4,11 +4,6 @@ authors = ["Vincent Le Chenadec <vincentlechenadec@gmail.com> and contributors"]
 version = "0.1.0"
 
 [deps]
-CartesianArrays = "76a5a9e6-eaa9-45ad-9e60-9c4e19c8bef4"
-CartesianCore = "b1b87794-22cb-46b0-a31c-6d11dc703d98"
-CartesianDDM = "b6d1be74-4177-4a9a-a698-32714aa528c5"
-IterativeSolvers = "42fd0dbc-a981-5370-80f2-aaf504508153"
-JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [compat]

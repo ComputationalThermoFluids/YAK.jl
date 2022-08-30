@@ -1,12 +1,8 @@
 module YAK
 
 using LinearAlgebra
-using CartesianCore
-using CartesianArrays
-using CartesianDDM
-using IterativeSolvers
 
-export cg!, cg
+export cg!, cg2!, cg, cg3!
 include("cg.jl")
 
 export cgs!
