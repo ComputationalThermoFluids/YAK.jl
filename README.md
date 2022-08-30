@@ -34,6 +34,8 @@ Or, equivalently, using Pkg REPL mode:
 julia> ]
 pkg> add YAK
 pkg> test YAK
+pkg> st
+    [-] YAK v0.x.x
 ```  
 
 
@@ -61,6 +63,8 @@ For altering or modifying the package:
 julia> ]
 pkg> develop YAK
 # a copy of the master branch will be created in $HOME/.julia/dev/YAK
+pkg> st
+    [-] YAK v0.x.x `~/.julia/dev/YAK`
 ```
 Modify or add functionalities as you wish and then update the local package:
 ```julia
