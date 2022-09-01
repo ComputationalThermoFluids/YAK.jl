@@ -1,3 +1,6 @@
+
+
+# Dolean, Jolivet & Nataf 2015 - page 103 - Algorithm 3.4
 function bicgstab!(
     x,
     A,
@@ -28,17 +31,21 @@ function bicgstab!(
     history, iter = [norm(z)], 0
     tol = max(reltol * history[1], abstol)
     while iter < maxiter && last(history) ≥ tol
+        
         δ = dot(rs, r)
         β = (δ * α) / (ρ * ω)
         d = deepcopy(p)
         axpy!(-ω, v, d) # d = d - ω * v
         p = deepcopy(r)
         axpy!(β, d, p) # p = p + β * d
+
+
         ldiv!(y, Pr, p) # y = M^{-1} * p
         mul!(v, A, y) # v = A * y
         α = δ / dot(rs, v)
         s = deepcopy(r) # s = r 
         mul!(s, v, α, -1, true) # r = r - α * v
+
         ldiv!(z, Pr, s) # z = M^{-1} * s 
         mul!(t, A, z) # t = A * z
         ldiv!(tn, Pr, t) # tn = M^{-1} * t 
@@ -46,7 +53,6 @@ function bicgstab!(
 
         axpy!(α, y, x) # x = x + α * y 
         axpy!(ω, z, x) # x = x + ω * z
-        #CartesianDDM.axpy_axpy!(α, y, ω, z, x) # x = x + α * y + ω * z
 
         r = deepcopy(s) # r = s 
         mul!(r, t, ω, -1, true) # r = r - ω * t
