@@ -1,8 +1,8 @@
-# # module TestGMRES
+# # module TestCGS
 
 # using YAK, Test, SparseArrays, LinearAlgebra
 
-# # @testset "GMRES" begin
+# # @testset "CGS" begin
 
 # # @testset "Small sparse Laplacian system" begin
 
@@ -14,32 +14,31 @@
 #     @test norm(A * xref - b) ≤ tol
 
 #     x = xref
-#     YAK.gmres!(x, A, b)
+#     YAK.cgs!(x, A, b)
 #     @test norm(A * x - b) ≤ tol
 
-#     x = rand(n)
-#     YAK.gmres!(x, A, b)
-#     @test norm(A * x - b) ≤ tol
+#     #x = rand(n)
+#     #YAK.cgs!(x, A, b)
+#     #@test norm(A * x - b) ≤ tol
 
 #     x = zeros(n)
-#     YAK.gmres!(x, A, b)
+#     YAK.cgs!(x, A, b)
 #     @test norm(A * x - b) ≤ tol
 
 #     # Test with cholesky factorizaation as preconditioner should converge immediately
 #     x = zeros(n)
 #     F = LinearAlgebra.lu(A)
-#     YAK.gmres!(x, A, b; Pr = F)
+#     YAK.cgs!(x, A, b; Pr = F)
 #     @test norm(A * x - b) ≤ tol
 
-#     # # All-zeros rhs should give all-zeros lhs
-#     # x = rand(n)
-#     # b = zeros(n)
-#     # YAK.bicgstab!(x, A, b)
-#     # norm(x)
-#     # @test norm(x) ≤ tol
+#     # All-zeros rhs should give all-zeros lhs
+#     x = rand(n)
+#     b = zeros(n)
+#     YAK.cgs!(x, A, b)
+#     @test norm(x) ≤ tol
 
-# # end # Small sparse Laplacian system
+# #end # Small sparse Laplacian system
 
-# # end # GMRES
+# #end # CGS
 
-# # end # module TestGMRES
+# #end # module TestCGS

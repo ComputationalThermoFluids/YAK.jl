@@ -1,29 +1,21 @@
-function gmres_update(x, s, q, i, H)
-    y = H[1:i, 1:i] \ s[1:i]
-    for k in eachindex(y)
-        x += q[k] * y[k]
-    end
-    return x
-end
-
+"""
+    gmres!
+    The generalized minimal residual method 'gmres' iteratively solves a linear systems with nonsymmetric matrix or operator (A) and approximates the solution 'x' Krylov subspace of maximal size 'maxiter' with minimal residual or stops when 'norm(A*x - b) < tol'.
+    If no preconditioner is supplied, indentity matrix is used.
+    The default 'verbose' level is zero, which means no printed output.
+"""
 function gmres!(
     x,
     A,
     b;
-    Pr = I, # avoid Identity()
-    abstol::Real = zero(mapreduce(eltype, promote_type, (x, A, b))),
-    reltol::Real = √eps(mapreduce(eltype, promote_type, (x, A, b))),
-    restart::Int = min(20, size(A, 2)),
-    maxiter::Int = length(b) ÷ 4,
-    log::Bool = false,
-    initially_zero::Bool = false,
-    verbose::Bool = false,
-)
-
+    Pr = I,
+    tol::Real = √eps(eltype(x)),
+    maxiter::Int = length(b)*length(b),
+    restart::Int = length(b),
+    )
     m = restart
-    history = [norm(b)]
-    tol = max(reltol * history[1], abstol)
-    for j = 1:maxiter
+    history, iter = [norm(b)], 0
+    while iter < maxiter && last(history) ≥ tol
 
         q = Vector{Any}(undef, m + 1)
         J = Vector{Any}(undef, m)
@@ -70,14 +62,22 @@ function gmres!(
 
             push(history, abs(s[i+1])) # Norm of residual
             # Check residual, compute x, and stop if possible
-            if history[end] < abstol
+            if history[end] < tol
                 x = gmres_update(x, s, q, i, H)
                 @goto exit
             end
         end
+        iter += 1
         x = gmres_update(x, s, q, m, H) # Update x before the restart
     end
     @label exit
-    verbose && println("iter $(length(history)) residual: $(history[end])")
-    ifelse(log, (x, history), (x,))
+    return x
 end # gmres
+
+function gmres_update(x, s, q, i, H)
+    y = H[1:i, 1:i] \ s[1:i]
+    for k in eachindex(y)
+        x += q[k] * y[k]
+    end
+    return x
+end

@@ -4,17 +4,12 @@ function cgs!(
     A,
     b;
     Pr = I,
-    abstol::Real = zero(mapreduce(eltype, promote_type, (x, A, b))),
-    reltol::Real = √eps(mapreduce(eltype, promote_type, (x, A, b))),
-    maxiter::Int = length(b) ÷ 4,
-    log::Bool = false,
-    initially_zero::Bool = false,
-    verbose::Bool = false,
-)
+    tol::Real = √eps(eltype(x)),
+    maxiter::Int = length(b)*length(b))
 
     r = deepcopy(b)
     rs = deepcopy(b)
-    !initially_zero && mul!(r, A, x, -1, true) # r = b - A * x
+    mul!(r, A, x, -1, true) # r = b - A * x
 
     z = similar(r)
     ldiv!(z, Pr, r) # z = Pr * r
@@ -26,9 +21,7 @@ function cgs!(
 
     Az = similar(r)
     ρ, α = 1.0, 1.0
-    history = [norm(z)]
-    tol = max(reltol * history[1], abstol)
-    iter = 0
+    history, iter = [norm(x)], 0
     while iter < maxiter && last(history) ≥ tol
         δ = dot(rs, r)
         β = δ / ρ
@@ -51,8 +44,6 @@ function cgs!(
         push!(history, norm(r))
         ρ = δ
         iter += 1
-        verbose && println("iter $(iter) residual: $(history[iter])")
     end
-    verbose && println("iter $(length(history)) residual: $(history[end])")
-    log ? (x, history) : x
+    return x
 end # CGS

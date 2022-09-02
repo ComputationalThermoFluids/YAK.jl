@@ -1,41 +1,44 @@
 module TestCG
 
-using YAK,Test,LinearAlgebra
+using YAK, Test, SparseArrays, LinearAlgebra
 
-#@testset "Small full system" begin
+@testset " CG" begin
+
+    @testset "Small sparse Laplacian system" begin
+
     n = 100
+    A = spdiagm(-1 => -ones(n - 1), 0 => 2ones(n), 1 => -ones(n - 1)); b = rand(n)
+    tol = √eps(eltype(b))
 
-    #@testset "Matrix{$T}" for T in (Float32, Float64, ComplexF32, ComplexF64)
-        T = Float64; abstol = √eps(float(T));
-        A = rand(T, n, n); A = A' * A + I; b = rand(T, n);
+    xref = A \ b
+    @test norm(A * xref - b) ≤ tol
 
-        x = zeros(T, n); @time cg!(x,A,b)
-        @time norm(A*x-b)
+    x = xref
+    YAK.cg!(x, A, b)
+    @test norm(A * x - b) ≤ tol
 
-        x = zeros(T, n); @time cg2!(x,A,b)
-        @time norm(A*x - b)
+    x = rand(n)
+    YAK.cg!(x, A, b)
+    @test norm(A * x - b) ≤ tol
 
-        #@test norm(A*x - b) / norm(b) ≤ reltol
+    x = zeros(n)
+    YAK.cg!(x, A, b)
+    @test norm(A * x - b) ≤ tol
 
-        # If you start from the exact solution, you should converge immediately
+    # Test with cholesky factorizaation as preconditioner should converge immediately
+    x = zeros(n)
+    F = LinearAlgebra.lu(A)
+    YAK.cg!(x, A, b; Pr = F)
+    @test norm(A * x - b) ≤ tol
 
-        @time x = YAK.cg(A,b)
-        @time norm(A*x - b)
+    # All-zeros rhs should give all-zeros lhs
+    x = rand(n)
+    b = zeros(n)
+    YAK.cg!(x, A, b)
+    @test norm(x) ≤ tol
 
-        xref = A\b; norm(A*xref - b)
-        x,his = YAK.cg(A,b;x0=xref,log=true)
-        @test norm(A*x - b) ≤ abstol
-        @test length(his) ≤ 2
+end # Small sparse Laplacian system
 
-        # Test with cholesky factorizaation as preconditioner should converge immediately
-        F = LinearAlgebra.cholesky(A, Val(false))
-        x,his = YAK.cg(A,b; Pr=F , log=true)
-        @test norm(A*x - b) ≤ abstol
-
-        # All-zeros rhs should give all-zeros lhs
-        x0 = YAK.cg(A, zeros(T, n))
-        @test x0 == zeros(T, n)
-    #end
-#end
+end # CG
 
 end # module TestCG
