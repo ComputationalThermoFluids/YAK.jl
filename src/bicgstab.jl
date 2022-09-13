@@ -22,27 +22,28 @@ function bicgstab!(
 
     p = deepcopy(r)
     v = deepcopy(r)
+    d = similar(r)
     s = similar(r)
     y = similar(r)
     t = similar(r)
     tn = similar(r)
 
-    ρ, α, ω = 1., 1., 1.
     history, iter = [norm(z)], 0
+    ρ, α, ω = 1., 1., 1.
     while iter < maxiter && last(history) ≥ tol
-        
+
         δ = dot(rs, r)
         β = (δ * α) / (ρ * ω)
-        d = deepcopy(p)
+        copy!(d, p)
         axpy!(-ω, v, d) # d = d - ω * v
-        p = deepcopy(r)
+        copy!(p, r)
         axpy!(β, d, p) # p = p + β * d
 
         ldiv!(y, Pr, p) # y = M^{-1} * p
         mul!(v, A, y) # v = A * y
         α = δ / dot(rs, v)
-        s = deepcopy(r) # s = r 
-        mul!(s, v, α, -1, true) # r = r - α * v
+        copy!(s, r)
+        axpy!(-α, v, s) # s = s - α * v
 
         ldiv!(z, Pr, s) # z = M^{-1} * s 
         mul!(t, A, z) # t = A * z
@@ -52,8 +53,8 @@ function bicgstab!(
         axpy!(α, y, x) # x = x + α * y 
         axpy!(ω, z, x) # x = x + ω * z
 
-        r = deepcopy(s) # r = s 
-        mul!(r, t, ω, -1, true) # r = r - ω * t
+        copy!(r, s)
+        axpy!(-ω, t, r) # r = r - ω * t
         push!(history, norm(r))
         ρ = δ
         iter += 1
