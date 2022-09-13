@@ -2,16 +2,14 @@ module YAK
 
 using LinearAlgebra
 
-export cg!
-include("cg.jl")
-
+export cg!, CGWs
 export bicgstab!
-include("bicgstab.jl")
-
 export gmres!
-include("gmres.jl")
-
 export cgs!
+
+include("cg.jl")
+include("bicgstab.jl")
+include("gmres.jl")
 include("cgs.jl")
 
 end
