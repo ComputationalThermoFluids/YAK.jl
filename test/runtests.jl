@@ -1,14 +1,15 @@
 using YAK
-using SparseArrays
+using LinearAlgebra
 using Test
 
 @testset "Laplacian" begin
     n = 64
 
-    A = spdiagm(-1 => -ones(n - 1),
-                0 => 2ones(n),
-                1 => -ones(n - 1))
+    A = Tridiagonal(-ones(n-1), 2ones(n), -ones(n-1))
     b = rand(n)
+
+    Pl = Bidiagonal(A, :U)
+    Pr = Bidiagonal(A, :L)
 
     x = zero(b)
     ws = bicgstabws(x, A, b)
@@ -16,6 +17,6 @@ using Test
 
     @test ≥(length(ws), 8)
 
-    solved, _ = bicgstab!(x, A, b, ws; history)
+    solved, _ = bicgstab!(x, A, b, ws; Pl, Pr, history)
     @test solved
 end
