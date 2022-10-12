@@ -24,10 +24,10 @@ the first input. If not, simply set it to zero before hand.
 function bicgstab!(x, A, b, ws::Workspace{T}, c=b;
                    Pl=I,
                    Pr=I,
-                   iter=2length(x),
+                   itmax=2length(x),
                    atol=√eps(T),
                    rtol=√eps(T),
-                   history=T[]) where {T}
+                   history=Vector{T}(undef, itmax+1)) where {T}
 
     u, r, p, v, s, q, y, t = parent(ws)
 
@@ -48,25 +48,31 @@ function bicgstab!(x, A, b, ws::Workspace{T}, c=b;
     ω = one(T)                     # ω₀
     ρ = one(T)                     # ρ₀
 
-    empty!(history)
-    push!(history, norm(r))
+    res = norm(r)
+
+    it = 1
+#    empty!(history)
+#    push!(history, norm(r))
 
     # zero-residual
-    iszero(last(history)) &&
-        return true, false, false
+    iszero(res) &&
+        return true, false, false, it-1
 
-    tol = atol + rtol * last(history)
+    tol = atol + rtol * res
 
     next = dot(c, r)               # ρ₁ = ⟨r̅₀,r₀⟩
 
     # breakdown (b⋅c = 0)
     iszero(next) &&
-        return true, false, true
+        return true, false, true, it-1
 
     # stopping criteria
-    solved = ≤(last(history), tol)
-    tired = >(length(history), iter)
+    solved = ≤(res, tol)
+    tired = >(it, itmax)
     broken = false
+
+    resize!(history, itmax+1)
+    history[it] = norm(r)
 
     while !|(solved, tired, broken)
         ρ = next
@@ -91,17 +97,20 @@ function bicgstab!(x, A, b, ws::Workspace{T}, c=b;
         axpby!(one(T), r, β, p)    # pₖ₊₁ = rₖ₊₁ + βₖ₊₁pₐᵤₓ
 
         # residual norm
-        push!(history, norm(r))
+        res = norm(r)
+        it += 1
 
         # stopping criteria
-        solved = ≤(last(history) + one(T), one(T)) ||
-                 ≤(last(history), tol)
-        tired = length(history) > iter
+        solved = ≤(res + one(T), one(T)) ||
+                 ≤(res, tol)
+        tired = it > itmax
         broken = iszero(α) || isnan(α)
+
+        history[it] = res
     end
 
     # update x
     axpy!(one(T), u, x)
 
-    return solved, tired, broken
+    return solved, tired, broken, it-1
 end
